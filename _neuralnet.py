@@ -83,15 +83,18 @@ class NeuralNetwork():
 		return _np.argmax(matrix, axis=0) # Returns index. Alt: _np.amax(matrix, axis=1)
 		##################
 
-	def calc_cost( self, X, Y, lmbda=0.0 ):
+	def calc_cost( self, X, Y, lmbda=0.0, ret_acc=False ):
 		a = self.forward_propagation( X ) # input is n-by-m >>> returns k-by-m
 		cost = _np.nan_to_num( _np.sum( -Y*_np.log(a)-(1-Y)*_np.log(1-a) ) )
 		cost += 0.5 * (lmbda/X.shape[1]) * sum(_np.linalg.norm(w)**2 for w in self.weights)
-		return cost
+		if ret_acc:
+			return cost, self.calc_accuracy( X=X, Y=Y, calc=False, a=a )
+		else:
+			return cost
 		##################
 
-	def calc_accuracy(self, X, Y ):
-		pred = _np.argmax( self.forward_propagation( X ), axis=0 ) # returns int index for each col.
+	def calc_accuracy(self, X, Y, calc=True, a=None ):
+		pred = _np.argmax( self.forward_propagation( X ), axis=0 ) if calc else _np.argmax( a, axis=0 )
 		real = _np.argmax( Y, axis=0 )
 		return 100 * float((pred==real).sum()) / Y.shape[1]
 		##################
@@ -130,7 +133,7 @@ class NeuralNetwork():
 		##################
 
 	def stochastic_gradient_descent(self, X, Y, X_CV=None, Y_CV=None, epochs=10, batch_size=10, eta=0.5, lmbda=0.0 ):
-		print 100 * '-', '\n    *** STARTING TRAINING (Stochastic Gradient Descent)'
+		print 100 * '-', '\n    *** STARTING TRAINING (Stochastic Gradient Descent)\n'
 		m = X.shape[1]
 		for e in xrange(epochs):
 			X, Y = self.randomise_data(X=X, Y=Y)
@@ -145,13 +148,15 @@ class NeuralNetwork():
 				self.biases = [ b-(eta/mb)*gb for b, gb in zip(self.biases, self.gradients[0]) ]
 				self.weights = [ (1-eta*(lmbda/m))*w-(eta/mb)*gw for w, gw in zip(self.weights, self.gradients[1]) ]
 			# Use the weights to get the results.
-			acc_train = self.calc_accuracy( X=X_train, Y=Y_train )
+			cost_train, acc_train = self.calc_cost( X=X_train, Y=Y_train, lmbda=lmbda, ret_acc=True )
+			#acc_train = self.calc_accuracy( X=X_train, Y=Y_train )
 			self.accuracy.append(acc_train)
-			print '        Training-cost:       ', self.calc_cost( X=X_train, Y=Y_train, lmbda=lmbda )
+			print '        Training-cost:       ', cost_train
 			print '        Training-accuracy:   {}%'.format( acc_train )
 			if X_CV is not None:
-				print '        Validation-cost:     ', self.calc_cost( X=X_CV, Y=Y_CV, lmbda=lmbda )
-				print '        Validation-accuracy:  {}%\n'.format( self.calc_accuracy( X=X_CV, Y=Y_CV ) )
+				cost_cv, acc_cv = self.calc_cost( X=X_CV, Y=Y_CV, lmbda=lmbda, ret_acc=True )
+				print '        Validation-cost:     ', cost_cv
+				print '        Validation-accuracy:  {}%\n'.format( acc_cv )
 		# Training completed. Plot graph?
 		_plt.plot( _np.arange(0,epochs), self.accuracy )
 		_plt.show()
@@ -213,7 +218,7 @@ if __name__=="__main__":
 
 	##################
 	# Build NEURAL NETWORK
-	NN = NeuralNetwork( sizes=[ X_train.shape[0],800,10 ] )
+	NN = NeuralNetwork( sizes=[ X_train.shape[0],100,10 ] )
 	print '        Initial cost:     ', NN.calc_cost( X=X_train, Y=Y_train )
 	print '        Initial accuracy: ', NN.calc_accuracy( X=X_train, Y=Y_train )
 	
