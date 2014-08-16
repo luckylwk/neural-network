@@ -92,7 +92,7 @@ class MNIST(object):
         render = ''
         for i in range(len(img)):
             if i % width == 0: render += '\n'
-            render += 1 if img[i] > 200 else 0
+            render += '1' if img[i] > 128 else '0'
             # if img[i] > 200:
             #     render += '1'
             # else:
@@ -115,7 +115,7 @@ class MNIST(object):
 if __name__ == "__main__":
     
     print 'Testing'
-    mn = MNIST('.')
+    mn = MNIST('../../_DATA/mnist/')
     if mn.test():
         print 'Passed'
 
