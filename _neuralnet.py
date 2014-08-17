@@ -28,6 +28,8 @@ To implement
 		dropout along with max- norm regularization, large decaying 
 		learning rates and high momentum provides a significant boost 
 		over just using dropout'
+
+	Decoupled cost/activation functions?
 '''
 
 
@@ -206,7 +208,7 @@ class NeuralNetwork():
 	def print_epoch_progress(self, epoch, pct):
 		pct *= 72.0/100.0
 		sys.stdout.write('\r')
-		sys.stdout.write('        Epoch %d: [%-72s] %7.2f%%' % ( epoch, '*' * int(pct), 100*pct/72 ) )
+		sys.stdout.write('    --- Epoch %d: [%-72s] %7.2f%%' % ( epoch, '*' * int(pct), 100*pct/72 ) )
 		sys.stdout.flush()
 		if pct==72.0: print '\r'
 		##################
@@ -269,7 +271,7 @@ if __name__=="__main__":
 
 	##################
 	# Build NEURAL NETWORK
-	NN = NeuralNetwork( sizes=[ X_train.shape[0],100,100,10 ] )
+	NN = NeuralNetwork( sizes=[ X_train.shape[0],50,30,10 ] )
 	
 	NN.stochastic_gradient_descent( X=X_train, Y=Y_train, X_CV=X_test, Y_CV=Y_test, 
 		epochs=10, batch_size=10, eta=0.6, lmbda=0.05, dropout=False )
