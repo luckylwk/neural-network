@@ -21,8 +21,10 @@ Implemented
 To implement
 	DropOut - Bernoulli and Gaussian?
 	DropConnect
+	Decaying learning rates
 	max-norm regularization
 	L1 regularization (norm)
+	Confusion matrix?
 
 	Hinton (2014): 
 		'Although dropout alone gives significant improvements, using 
@@ -59,7 +61,7 @@ class NeuralNetwork():
 	'''
 
 	def __init__( self, sizes, cost=Cost_CrossEntropy, activation=Act_Sigmoid ):
-		self.version = 1.2
+		self.version = 1.5
 		self.layers = sizes
 		self.cost = cost
 		self.activation = activation
@@ -68,26 +70,24 @@ class NeuralNetwork():
 		self.weights = [ _np.random.randn(y,x)/_np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:]) ]
 		# Activations and gradients.
 		self.activations, self.zetas, self.gradients, self.acc, self.acc_cv = [], [], [], [], []
-		# Update.
-		print 100 * '-', '\n    *** NEURAL NETWORK INITIALIZED'
-		print '        Activation function:     ', self.activation.name
-		print '        Cost function:           ', self.cost.name
-		print 100 * '-'
-		for e,w in enumerate(self.weights): print '        Weights dimensions (',e,'):', w.shape
-		print 100 * '-'
-		for e,b in enumerate(self.biases): print '        Biases dimensions (',e,'): ', b.shape
-		print 100 * '-'
-		p = 0
-		for e,w in enumerate(self.weights): p += w.shape[0] * (w.shape[1]+1)
-		print '        Number of parameters:    ', p ,'\n', 100 * '-'
+		# Dropout settings.
+		self.dropout = False
+		self.droprate = 1.0
+		self.dropdefault, self.dropmask = [], []
+		# Show screen status.
+		self.print_network()
 		##################
 
-	def forward_propagation( self, a, r=None, store=False ):
+	def forward_propagation( self, a, store=False, dropout_mask=False, dropout_weight=False ):
 		# Assumes X to be n-features by m-samples.
-		if r is None: r = self.generate_dropouts( mb=a.shape[1], binomials=False )
+		# Deal with activation storage.
 		if store: self.activations.append(a)
-		for b, w, rp in zip(self.biases, self.weights, r):
- 			a *= rp # dropout activations.
+		# Feedforward over layers
+		for b, w in zip( self.biases, self.weights ):
+ 			if dropout_mask:
+ 				a *= _np.random.binomial( 1, self.droprate, a.shape )
+			# if dropout_weight:
+			# 	w *= self.droprate
 			if store:
 				zeta = _np.dot(w, a) + b
 				self.zetas.append(zeta)
@@ -102,9 +102,8 @@ class NeuralNetwork():
 		return _np.argmax(matrix, axis=0) # Returns index. Alt: _np.amax(matrix, axis=1)
 		##################
 
-	def calc_cost( self, X, Y, lmbda=0.0, ret_acc=False ):
-		a = self.forward_propagation( X ) # input is n-by-m >>> returns k-by-m
-		#cost = _np.nan_to_num( _np.sum( -Y*_np.log(a)-(1-Y)*_np.log(1-a) ) ) / X.shape[1]
+	def calc_cost( self, X, Y, lmbda=0.0, ret_acc=False, dropout_weight=False ):
+		a = self.forward_propagation( a=X, dropout_weight=dropout_weight ) # input is n-by-m >>> returns k-by-m
 		cost = self.cost.fn( activations=a, Y=Y ) / X.shape[1]
 		cost += 0.5 * (lmbda/X.shape[1]) * sum(_np.linalg.norm(w)**2 for w in self.weights)
 		if ret_acc:
@@ -122,26 +121,24 @@ class NeuralNetwork():
 
 	## TRAINING SECTION.
 
-	def back_propagation( self, X, Y, r ):
+	def back_propagation( self, X, Y ):
 		# X and Y are assumed to be n-by-mb and k-by-mb matrices representing a mb-sized batch of m.
 		# Returns the gradients for each bias and weights, initialize with zeros.
 		grad_b = [ _np.zeros(b.shape) for b in self.biases ]
 		grad_w = [ _np.zeros(w.shape) for w in self.weights ]
 		# Forward propogation to get activations and zeta's.
-		self.forward_propagation( a=X, r=r, store=True )
+		self.forward_propagation( a=X, store=True, dropout_mask=True )
 		# Calculate and populate the last layers.
-		#delta = self.activations[-1] - Y # k-by-mb
 		delta = self.cost.delta( activations=self.activations[-1], Y=Y ) # k-by-mb
 		# Update last gradient-layers.
 		grad_b[-1] = delta.sum(axis=1).reshape((delta.shape[0],1)) # sum over columns to k-by-1
 		grad_w[-1] = _np.dot(delta, self.activations[-2].transpose()) # k-by-mb times mb-by-someL - k-by-someL
 		# Update the remaining gradient-layers
 		for l in xrange(2, len(self.layers)):
-			#spv = fn_sigmoid(self.zetas[-l])*(1-fn_sigmoid(self.zetas[-l]))
 			spv = self.activation.prime( zeta=self.zetas[-l], vectorize=False )
 			delta = _np.dot( self.weights[-l+1].transpose(), delta ) * spv
-			grad_b[-l] = delta.sum(axis=1).reshape((delta.shape[0],1)) # sum over columns to someL-by-1
-			grad_w[-l] = _np.dot(delta, self.activations[-l-1].transpose())
+			grad_b[-l] = self.droprate * delta.sum(axis=1).reshape((delta.shape[0],1)) # sum over columns to someL-by-1
+			grad_w[-l] = self.droprate * _np.dot(delta, self.activations[-l-1].transpose())
 		# Update gradients.
 		self.gradients = [ grad_b, grad_w ]
 		##################
@@ -151,52 +148,47 @@ class NeuralNetwork():
 		return X[:,rnd], Y[:,rnd]
 		##################
 
-	def generate_dropouts( self, mb, binomials=True, p=1.0 ):
-		# Dropout - generate binomials.
-		r = [ _np.ones((self.layers[0],mb)) ]
-		if binomials:
-			r += [ _np.random.binomial(1,p,(l,mb)) * 1.0 for l in self.layers[1:-1] ]
-		else:
-			r += [ _np.ones((l,mb)) for l in self.layers[1:-1] ]
-		r += [ _np.ones((self.layers[-1],mb)) ]
-		return r
-		##################
-
 	def stochastic_gradient_descent(self, X, Y, X_CV=None, Y_CV=None, 
-		epochs=10, batch_size=10, eta=0.5, lmbda=0.0, dropout=False, droprate=0.5 ):
+		epochs=10, batch_size=10, eta=0.5, 
+		lmbda=0.0, dropout=False, droprate=0.8 ):
 		print 100 * '-', '\n    *** STARTING TRAINING (Stochastic Gradient Descent)'
-		m = X.shape[1]
-		cost_train, acc_train = self.calc_cost( X=X_train, Y=Y_train, lmbda=lmbda, ret_acc=True )
+		cost_train, acc_train = self.calc_cost( X=X_train, Y=Y_train, lmbda=0.0, ret_acc=True )
 		self.acc.append(acc_train), self.acc_cv.append(acc_train)
-		print '        Initial cost:          ', cost_train
-		print '        Initial accuracy:       {}%\n'.format( acc_train )
+		print '        Initial cost:           {}'.format( cost_train )
+		print '        Initial accuracy:       {}%'.format( acc_train )
+		# Handle dropout
+		if dropout:
+			self.dropout = True
+			self.droprate = droprate
+			print '        Dropout enabled:        YES | {}%'.format( 100*self.droprate )
+		print ''
+		# Start Stochastic gradient descent	
+		m = X.shape[1]
 		# Start training using batch-stochastic-gradient-descent.
 		for e in xrange(epochs):
 			start_e = datetime.now()
 			X, Y = self.randomise_data(X=X, Y=Y)
 			for i in xrange(0, m, batch_size):
-				self.print_epoch_progress(epoch=e, pct=100*float(i+batch_size)/m )
+				self.print_epoch_progress(epoch=e+1, pct=100*float(i+batch_size)/m )
 				# Housekeeping.
 				self.activations, self.zetas, self.gradients = [], [], []
 				lim_upper = min(m,i+batch_size)
 				mb = lim_upper - i
-				# Dropout - generate binomials.
-				r = self.generate_dropouts( mb=mb ) if dropout else self.generate_dropouts( mb=mb, binomials=False, p=droprate )
 				# Perform batch-backpropagation to obtain the gradients.
-				self.back_propagation( X=X[:,i:lim_upper], Y=Y[:,i:lim_upper], r=r )
+				self.back_propagation( X=X[:,i:lim_upper], Y=Y[:,i:lim_upper] )
 				# Update the biases and weights using the gradients.
 				self.biases = [ b-(eta/mb)*gb for b, gb in zip(self.biases, self.gradients[0]) ]
 				self.weights = [ (1-eta*(lmbda/m))*w-(eta/mb)*gw for w, gw in zip(self.weights, self.gradients[1]) ]
 			# Use the weights to get the results.
-			cost_train, acc_train = self.calc_cost( X=X_train, Y=Y_train, lmbda=lmbda, ret_acc=True )
+			cost_train, acc_train = self.calc_cost( X=X_train, Y=Y_train, lmbda=lmbda, ret_acc=True, dropout_weight=True )
 			self.acc.append(acc_train)
-			print '        Training-cost:         ', cost_train
+			print '        Training-cost:          {}'.format( cost_train )
 			print '        Training-accuracy:      {}%'.format( acc_train )
 			print '        Accuracy improvement:   {}%'.format( acc_train-self.acc[-2] )
 			if X_CV is not None:
-				cost_cv, acc_cv = self.calc_cost( X=X_CV, Y=Y_CV, lmbda=lmbda, ret_acc=True )
+				cost_cv, acc_cv = self.calc_cost( X=X_CV, Y=Y_CV, lmbda=lmbda, ret_acc=True, dropout_weight=True )
 				self.acc_cv.append(acc_cv)
-				print '        Validation-cost:       ', cost_cv
+				print '        Validation-cost:        {}'.format( cost_cv )
 				print '        Validation-accuracy:    {}%'.format( acc_cv )
 			print '        Epoch time elapsed:     {} seconds.\n'.format( datetime.now()-start_e )
 		# Done. Plot accuracy graphs.
@@ -216,6 +208,21 @@ class NeuralNetwork():
 		if len(self.acc_cv)>1: _plt.plot( _np.arange(0,len(self.acc)), self.acc_cv, 'r' )
 		_plt.ylim([0,100])
 		_plt.show()
+		##################
+
+	def print_network(self):
+		# Update.
+		print 100 * '-', '\n    *** NEURAL NETWORK INITIALIZED'
+		print '        Activation function:       ', self.activation.name
+		print '        Cost function:             ', self.cost.name
+		print 100 * '-'
+		for e,w in enumerate(self.weights): print '        Weights dimensions (',e,'):  ', w.shape
+		print 100 * '-'
+		for e,b in enumerate(self.biases): print '        Biases dimensions (',e,'):   ', b.shape
+		print 100 * '-'
+		p = 0
+		for e,w in enumerate(self.weights): p += w.shape[0] * (w.shape[1]+1)
+		print '        Number of parameters:      ', p ,'\n', 100 * '-'
 		##################
 
 	## FILE HANDLING.
@@ -257,22 +264,24 @@ if __name__=="__main__":
 	_MN_DATA.test_images, _MN_DATA.test_labels = _MN_DATA.load_testing()
 	_MN_DATA.train_images, _MN_DATA.train_labels = _MN_DATA.load_training()
 	X_max, X_min = _np.max(_MN_DATA.train_images) * 1.0, _np.min(_MN_DATA.train_images) * 1.0
-	print '        Data loaded in:      {} seconds.'.format( datetime.now()-start )
+	print '        Data loaded in:             {} seconds.'.format( datetime.now()-start )
 	# Make a selection, normalize and transpose.
-	m, m_cv = 30000, 10000
+	m, m_cv = 20000, 10000
 	X_train = _np.asarray( _MN_DATA.train_images[:m]/(X_max-X_min) ).transpose() # m-by-n to n-by-m
 	Y_train = _np.asarray( [ fn_vectorize(_) for _ in _MN_DATA.train_labels[:m] ] ).reshape((m,10)).transpose() # m-by-1 to k-by-m
 	X_test = _np.asarray( _MN_DATA.train_images[m:m+m_cv]/(X_max-X_min) ).transpose()
 	Y_test = _np.asarray( [ fn_vectorize(_) for _ in _MN_DATA.train_labels[m:m+m_cv] ] ).reshape((m_cv,10)).transpose()
-	print '        Training-set shape: ', X_train.shape, '\n        Testing-set shape:  ', Y_train.shape, '\n', 100 * '-'
+	print '        Training-set shape:        ', X_train.shape
+	print '        Testing-set shape:         ', Y_train.shape, '\n', 100 * '-'
 
 
 	##################
 	# Build NEURAL NETWORK
-	NN = NeuralNetwork( sizes=[ X_train.shape[0],100,100,10 ] )
+	NN = NeuralNetwork( sizes=[ X_train.shape[0],50,10 ] )
 	
 	NN.stochastic_gradient_descent( X=X_train, Y=Y_train, X_CV=X_test, Y_CV=Y_test, 
-		epochs=5, batch_size=10, eta=0.75, lmbda=0.1, dropout=False )
+		epochs=10, batch_size=10, eta=0.6, 
+		lmbda=0.1, dropout=False, droprate=0.7 )
 
 	# print '        Saving NeuralNetwork parameters to file.'
 	# NN.save_to_file( X=X_train, Y=Y_train, PATH='', FILE='test_save.json' )
