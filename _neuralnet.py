@@ -243,6 +243,14 @@ class NeuralNetwork():
 		f.close()
 	##################
 
+	def load_from_file( self, PATH, FILE ):
+		print '        Loading parameters from ', FILE
+		params = json.load( open( PATH + FILE, "r+" ) )
+		self.weights = params['weights']
+		self.biases = params['biases']
+		print '        Network loaded and ready for use.'
+	##################
+
 ##################
 ##################
 
@@ -263,7 +271,7 @@ if __name__=="__main__":
 	# Load data from files.
 	_MN_DATA.test_images, _MN_DATA.test_labels = _MN_DATA.load_testing()
 	_MN_DATA.train_images, _MN_DATA.train_labels = _MN_DATA.load_training()
-	X_max, X_min = _np.max(_MN_DATA.train_images) * 1.0, _np.min(_MN_DATA.train_images) * 1.0
+	X_max, X_min = 255, 0 #_np.max(_MN_DATA.train_images) * 1.0, _np.min(_MN_DATA.train_images) * 1.0
 	print '        Data loaded in:             {} seconds.'.format( datetime.now()-start )
 	# Make a selection, normalize and transpose.
 	m, m_cv = 20000, 10000
@@ -274,12 +282,13 @@ if __name__=="__main__":
 	print '        Training-set shape:        ', X_train.shape
 	print '        Testing-set shape:         ', Y_train.shape, '\n', 100 * '-'
 
-
 	##################
 	# Build NEURAL NETWORK
 	NN = NeuralNetwork( sizes=[ X_train.shape[0],50,10 ] )
 	
-	NN.stochastic_gradient_descent( X=X_train, Y=Y_train, X_CV=X_test, Y_CV=Y_test, 
+	NN.stochastic_gradient_descent( 
+		X=X_train, Y=Y_train, 
+		X_CV=X_test, Y_CV=Y_test, 
 		epochs=10, batch_size=10, eta=0.6, 
 		lmbda=0.1, dropout=False, droprate=0.7 )
 
