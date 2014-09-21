@@ -91,12 +91,11 @@ class Act_Tanh:
 # 	#
 # 	@staticmethod
 # 	def fn( zeta, vectorize=False ):
-# 		return _np.tanh(zeta)
+# 		return _np.log( 1.0 + _np.exp(zeta) )
 # 		##################
 # 	@classmethod
 # 	def prime( cls, zeta, vectorize=False ):
-# 		f = cls.fn( zeta=zeta )
-# 		return 1.0 - _np.multiply(f,f)
+# 		...
 # 		##################
 # 	##################
 

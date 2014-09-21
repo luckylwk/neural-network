@@ -152,7 +152,7 @@ class NeuralNetwork():
 		epochs=10, batch_size=10, eta=0.5, 
 		lmbda=0.0, dropout=False, droprate=0.8 ):
 		print 100 * '-', '\n    *** STARTING TRAINING (Stochastic Gradient Descent)'
-		cost_train, acc_train = self.calc_cost( X=X_train, Y=Y_train, lmbda=0.0, ret_acc=True )
+		cost_train, acc_train = self.calc_cost( X=X_train, Y=Y_train, lmbda=lmbda, ret_acc=True )
 		self.acc.append(acc_train), self.acc_cv.append(acc_train)
 		print '        Initial cost:           {}'.format( cost_train )
 		print '        Initial accuracy:       {}%'.format( acc_train )
@@ -246,8 +246,8 @@ class NeuralNetwork():
 	def load_from_file( self, PATH, FILE ):
 		print '        Loading parameters from ', FILE
 		params = json.load( open( PATH + FILE, "r+" ) )
-		self.weights = params['weights']
-		self.biases = params['biases']
+		self.weights = _np.asarray( [ _np.asarray(w) for w in params['weights'] ] )
+		self.biases = _np.asarray( [ _np.asarray(b) for b in params['biases'] ] )
 		print '        Network loaded and ready for use.'
 	##################
 
