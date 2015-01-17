@@ -7,12 +7,13 @@ from activation import *
 
 class HiddenLayer(object):
 
-	def __init__( self, rng, layer_input, n_in, n_out, activation=Sigmoid, W_in=None, b_in=None, use_bias=True ):
+	def __init__( self, rng, layer_input, n_in, n_out, activation=Sigmoid, W_in=None, b_in=None, use_bias=True, verbose=True ):
 		
-		print '\t    --- Initialising HIDDEN Layer'
-		print '\t\tInput size:         {}'.format( n_in )
-		print '\t\tOutput size:        {}'.format( n_out )
-		print '\t\tActivation function {}'.format( activation.name )
+		if verbose:
+			print '\t\t    --- Initialising HIDDEN Layer'
+			print '\t\t\tInput size:         {}'.format( n_in )
+			print '\t\t\tOutput size:        {}'.format( n_out )
+			print '\t\t\tActivation function {}'.format( activation.name )
 
 		self.input = layer_input
 		self.activation = activation
@@ -21,16 +22,14 @@ class HiddenLayer(object):
 		if W_in is None:
 			W_val = self.create_weights( rng=rng, n_in=n_in, n_out=n_out )
 			W_in = theano.shared( value=W_val, name='W', borrow=True )
-		# else:
-			# W_val = np.asarray( W_in, dtype=theano.config.floatX )
+
 		self.W = W_in
 
 		# Biases
 		if b_in is None:
 			b_val = np.zeros( (n_out,), dtype=theano.config.floatX )
 			b_in = theano.shared( value=b_val, name='b', borrow=True )
-		# else:
-		# 	b_val = np.asarray( b_in, dtype=theano.config.floatX )
+
 		self.b = b_in
 
 		# Create the forward propogated zeta.	
@@ -86,7 +85,8 @@ class DropoutHiddenLayer(HiddenLayer):
 			activation=activation,
 			W_in=W_in, 
 			b_in=b_in,
-			use_bias=use_bias
+			use_bias=use_bias,
+			verbose=False
 		)
 
 		self.output = dropout_mask( rng=rng, p=dropout_rate, values=self.output )

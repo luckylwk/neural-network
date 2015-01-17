@@ -1,3 +1,5 @@
+# THEANO_FLAGS=mode=FAST_RUN,device=cpu,floatX=float32 python run_mlp.py
+
 import sys
 from collections import OrderedDict
 
@@ -40,7 +42,7 @@ if __name__ == '__main__':
 		rng=rng, 
 		init_input=x,
 		layer_sizes=[ 28*28, 1200, 1200, 10 ],
-		dropout_rates=[ 0.2, 0.5, 0.5 ], # rate is the chance something is dropped.
+		dropout_rates=[ 0.2, 0.2, 0.2 ], # rate is the chance something is dropped.
 		activations=[ ReLU, ReLU, SoftMax ],
 		use_bias=True 
 	)
@@ -53,7 +55,7 @@ if __name__ == '__main__':
 	# TRAINING SETUP.
 	initial_learning_rate = 1.0
 	learning_rate_decay = 0.998
-	batch_size = 1000
+	batch_size = 100
 	__TRAINER__ = GradientDescent( 
 		datasets=datasets,
 		model=__MODEL__, 
@@ -147,7 +149,7 @@ if __name__ == '__main__':
 
 	__CV_MODEL__ = theano.function(
 		inputs=[index],
-        outputs=__MODEL__.errors(y),
+        outputs=[ __MODEL__.negative_log_likelihood(y), __MODEL__.errors(y) ],
         givens={
             x: valid_set_x[index * batch_size:(index + 1) * batch_size],
             y: valid_set_y[index * batch_size:(index + 1) * batch_size]
@@ -174,15 +176,26 @@ if __name__ == '__main__':
 	# EPOCHS
 	
 	for e in range(5):
-		
+
 		# Minibatches. -- not stochastic!!?
+		train_cost = 0.0
 		for minibatch_index in xrange(n_train_batches):
-			minibatch_avg_cost = __TRAIN_MODEL__( e+1, minibatch_index )
-			fn_print_epoch_progress( epoch=e+1, pct=100.0*(minibatch_index+1)/n_train_batches, cost=minibatch_avg_cost )
+			train_cost += __TRAIN_MODEL__( e+1, minibatch_index )
+			progress_pct = 100.0 * (minibatch_index+1)/n_train_batches
+			if progress_pct % 5.0 == 0:
+				fn_print_epoch_progress( epoch=e+1, pct=progress_pct, cost=train_cost/(minibatch_index+1) )
 
-		this_validation_errors = np.sum( [ __CV_MODEL__(i) for i in xrange(n_valid_batches) ] )
+		# Cross-validation.
+		cv_cost, cv_error = 0.0, 0.0
+		for i in xrange(n_valid_batches):
+			c, e = __CV_MODEL__(i)
+			cv_cost += c
+			cv_error += 100.0 * e
 
-		print '\t\tCV Cost: %5.3f\t|\tTest Cost: %5.3f' % ( this_validation_errors, 0.00 )
+		# cv_cost, cv_errors = np.mean( [ __CV_MODEL__(i) for i in xrange(n_valid_batches) ] ) * 100.0
+		# print this_validation_errors
+
+		print '\t\tCV Cost: %7.3f --- CV Error: %5.3f%%' % ( cv_cost/n_valid_batches, cv_error/n_valid_batches )
 		# Update the learning rate using the defined Theano function.
 		new_learning_rate = decay_learning_rate()
 

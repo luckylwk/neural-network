@@ -9,26 +9,24 @@ class LogisticRegression(object):
 	
 	def __init__( self, layer_input, n_in, n_out, W_in=None, b_in=None, activation=SoftMax ):
 		
-		print '\t    --- Initialising LOGISTIC REGRESSION Output Layer'
-		print '\t\tInput size:          {}'.format( n_in )
-		print '\t\tOutput size:         {}'.format( n_out )
-		print '\t\tActivation function  {}'.format( activation.name )
+		print '\t\t    --- Initialising LOGISTIC REGRESSION Output Layer'
+		print '\t\t\tInput size:          {}'.format( n_in )
+		print '\t\t\tOutput size:         {}'.format( n_out )
+		print '\t\t\tActivation function  {}'.format( activation.name )
 
 		# initialize with 0 the weights W as a matrix of shape (n_in, n_out)
 		if W_in is None:
 			W_val = np.zeros( (n_in, n_out), dtype=theano.config.floatX )
-		else:
-			W_val = np.asarray( W_in, dtype=theano.config.floatX )
+			W_in = theano.shared( value=W_val, name='W', borrow=True )
 
-		self.W = theano.shared( value=W_val, name='W', borrow=True )
+		self.W = W_in
 		
 		# initialize the baises b as a vector of n_out 0s
 		if b_in is None:
 			b_val = np.zeros( (n_out,), dtype=theano.config.floatX )
-		else:
-			b_val = np.asarray( b_in, dtype=theano.config.floatX )
+			b_in = theano.shared( value=b_val, name='b', borrow=True )
 		
-		self.b = theano.shared( value=b_val, name='b', borrow=True )
+		self.b = b_in
 
 		# compute vector of class-membership probabilities in symbolic form
 		self.p_y_given_x = activation.fn( theano.tensor.dot(layer_input, self.W) + self.b )
@@ -68,14 +66,14 @@ class LogisticRegression(object):
 		##################
 
 
-	def errors(self, y):
+	def errors( self, y ):
+		# Check for dimensions.
 		if y.ndim != self.y_pred.ndim:
-			raise TypeError('y should have the same shape as self.y_pred',
-				('y', target.type, 'y_pred', self.y_pred.type))
+			raise TypeError( 'y should have the same shape as self.y_pred', ('y', target.type, 'y_pred', self.y_pred.type) )
 		# check if y is of the correct datatype
 		if y.dtype.startswith('int'):
 			# the T.neq operator returns a vector of 0s and 1s, where 1 represents a mistake in prediction
-			return theano.tensor.mean(theano.tensor.neq(self.y_pred, y))
+			return theano.tensor.mean( theano.tensor.neq( self.y_pred, y ) )
 		else:
 			raise NotImplementedError()
 		##################

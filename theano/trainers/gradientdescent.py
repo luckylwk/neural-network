@@ -28,14 +28,20 @@ class GradientDescent(object):
 		self.gradients_momentum = []
 
 		self.updates = OrderedDict()
+
+		self.index = theano.tensor.lscalar()
+		self.epoch = theano.tensor.scalar()
 		##################
 
 	@classmethod
 	def setup_parameters( self ):
+		dropout = True
+
 		print '\t\tSetting up Training parameters and environment'
-		# for param in self.__MODEL__.params:
-		# 	# Use the right cost function here to train with or without dropout.
-		# 	gradients.append( theano.tensor.grad( dropout_cost if dropout else cost, param ) )
+		
+		for param in self.__MODEL__.params:
+			# Use the right cost function here to train with or without dropout.
+			self.gradients.append( theano.tensor.grad( dropout_cost if dropout else cost, param ) )
 		##################
 
 	@classmethod
