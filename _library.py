@@ -2,40 +2,6 @@ import numpy as _np
 
 
 
-# ## LOG-LOSS | https://www.kaggle.com/wiki/LogarithmicLoss
-# def fn_logreg_cost( Theta, X, y, lmbda ):
-# 	m = X.shape[0] # Number of training examples
-# 	# Calculate the probability of each sample being 1.
-# 	Prob = fn_sigmoid( X.dot(Theta) ) # <class 'numpy.ndarray'> - m-by-1.
-# 	# Workaround for LOG(zero)
-# 	PROB_1ST = _np.log(Prob)
-# 	PROB_2ND = _np.log(1.0-Prob)
-# 	PROB_1ST[PROB_1ST == -_np.inf] = 0
-# 	PROB_2ND[PROB_2ND == -_np.inf] = 0
-# 	# Calculate unregularized regression cost.
-# 	J = ( PROB_1ST.dot(-y) - PROB_2ND.dot(1.0-y) ) / m
-# 	# Calculate regularisation-penalty.
-# 	J += lmbda * Theta.dot(Theta) / (2.0*m)
-# 	return J
-# 	##################
-
-
-# ## Sigmoid function. zeta - <class 'numpy.ndarray'>
-# def fn_sigmoid( zeta ):
-# 	return 1.0 / ( 1.0 + _np.exp( -1.0*zeta ) )
-# 	##################
-
-# fn_sigmoid_vec = _np.vectorize(fn_sigmoid)
-# ##################
-
-# def fn_sigmoid_prime(z):
-# 	return fn_sigmoid(z) * (1-fn_sigmoid(z))
-# 	##################
-
-# fn_sigmoid_prime_vec = _np.vectorize(fn_sigmoid_prime)
-# ##################
-
-
 
 class Act_Sigmoid:
 	#
@@ -100,6 +66,26 @@ class Act_Tanh:
 # 	##################
 
 
+class Act_Softmax:
+	#
+	name = 'Softmax'
+	#
+	@staticmethod
+	def fn( zeta, vectorize=False ):
+		num = _np.exp( zeta )
+		denom = num.sum(axis=1)
+		denom = denom.reshape( (zeta.shape[0],1) )
+		return num/denom
+		##################
+	@classmethod
+	def prime( cls, zeta, vectorize=False ):
+		ap = cls.fn( zeta=zeta ) * (1-cls.fn( zeta=zeta ))
+		return _np.vectorize(ap) if vectorize else ap
+		##################
+	##################
+
+
+
 class Cost_Quadratic:
 	#
 	name = 'Quadratic'
@@ -135,9 +121,4 @@ class Cost_CrossEntropy:
 
 
 ## QUANTILE-LOSS | http://en.wikipedia.org/wiki/Quantile_regression
-
-
-
-# Squared loss. Useful for regression problems, when maximizing expectation. For example: Return on stocks.
-# Classic loss. Vanilla squared loss (without the importance weight aware update).
 # Hinge loss. Useful for classification problems, maximizing the yes/no question. For example: Spam or no spam.

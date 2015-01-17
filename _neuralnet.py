@@ -1,6 +1,7 @@
 # Libraries
 import sys
 import json
+from math import ceil, sqrt
 from datetime import datetime
 
 # External Libraries
@@ -8,7 +9,7 @@ import numpy as _np
 import matplotlib.pyplot as _plt
 
 # Own Libraries
-from _library import Cost_CrossEntropy, Act_Sigmoid, Act_ReLU, Act_Tanh
+from _library import Cost_CrossEntropy, Act_Sigmoid, Act_ReLU, Act_Tanh, Act_Softmax
 sys.path.append('__data')
 from mnist_load import *
 
@@ -84,8 +85,8 @@ class NeuralNetwork():
 		if store: self.activations.append(a)
 		# Feedforward over layers
 		for b, w in zip( self.biases, self.weights ):
- 			if dropout_mask:
- 				a *= _np.random.binomial( 1, self.droprate, a.shape )
+			if dropout_mask:
+				a *= _np.random.binomial( 1, self.droprate, a.shape )
 			# if dropout_weight:
 			# 	w *= self.droprate
 			if store:
@@ -251,6 +252,32 @@ class NeuralNetwork():
 		print '        Network loaded and ready for use.'
 	##################
 
+	def visualize_layers( self, layer=1 ):
+		d_1 = int( ceil( sqrt( self.layers[layer] ) ) )
+		d_2 = int( ceil( sqrt( self.layers[layer-1] ) ) )
+		for i in range(1,self.layers[layer]+1):
+			_plt.subplot(d_1, d_1, i)
+			_plt.imshow(self.weights[layer-1][i-1,:].reshape(d_2,d_2),
+				cmap=_plt.cm.gray, 
+				interpolation='nearest')
+        	ax = _plt.gca()
+    		ax.set_axis_off()
+		_plt.show()
+		##################
+
+	def confusion_matrix( self, Y_real, Y_pred ):
+		from sklearn.metrics import confusion_matrix
+		cm = confusion_matrix( Y_real, Y_pred )
+		print 'Confusion Matrix: \n', cm
+		# Show confusion matrix in a separate window
+		_plt.matshow(cm)
+		_plt.title('Confusion matrix')
+		_plt.colorbar()
+		_plt.ylabel('True label')
+		_plt.xlabel('Predicted label')
+		_plt.show()
+		##################
+
 ##################
 ##################
 
@@ -271,10 +298,10 @@ if __name__=="__main__":
 	# Load data from files.
 	_MN_DATA.test_images, _MN_DATA.test_labels = _MN_DATA.load_testing()
 	_MN_DATA.train_images, _MN_DATA.train_labels = _MN_DATA.load_training()
-	X_max, X_min = 255, 0 #_np.max(_MN_DATA.train_images) * 1.0, _np.min(_MN_DATA.train_images) * 1.0
+	X_max, X_min = _np.max(_MN_DATA.train_images) * 1.0, _np.min(_MN_DATA.train_images) * 1.0
 	print '        Data loaded in:             {} seconds.'.format( datetime.now()-start )
 	# Make a selection, normalize and transpose.
-	m, m_cv = 20000, 10000
+	m, m_cv = 20000, 5000
 	X_train = _np.asarray( _MN_DATA.train_images[:m]/(X_max-X_min) ).transpose() # m-by-n to n-by-m
 	Y_train = _np.asarray( [ fn_vectorize(_) for _ in _MN_DATA.train_labels[:m] ] ).reshape((m,10)).transpose() # m-by-1 to k-by-m
 	X_test = _np.asarray( _MN_DATA.train_images[m:m+m_cv]/(X_max-X_min) ).transpose()
@@ -284,13 +311,20 @@ if __name__=="__main__":
 
 	##################
 	# Build NEURAL NETWORK
-	NN = NeuralNetwork( sizes=[ X_train.shape[0],50,10 ] )
+	NN = NeuralNetwork( sizes=[ X_train.shape[0],100,10 ] )
 	
 	NN.stochastic_gradient_descent( 
 		X=X_train, Y=Y_train, 
 		X_CV=X_test, Y_CV=Y_test, 
-		epochs=10, batch_size=10, eta=0.6, 
-		lmbda=0.1, dropout=False, droprate=0.7 )
+		epochs=3, batch_size=10, eta=0.6, 
+		lmbda=0.4, dropout=False, droprate=0.7 )
+
+	NN.visualize_layers( 1 )
+
+	Y_activations = NN.forward_propagation( a=X_test )
+	Y_pred = NN.calc_payoff( matrix=Y_activations )
+	Y_real = NN.calc_payoff( matrix=Y_test )
+	NN.confusion_matrix( Y_real, Y_pred )
 
 	# print '        Saving NeuralNetwork parameters to file.'
 	# NN.save_to_file( X=X_train, Y=Y_train, PATH='', FILE='test_save.json' )
