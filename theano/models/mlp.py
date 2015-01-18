@@ -70,7 +70,8 @@ class MLP(object):
 			n_in=self.weights[-1][0], n_out=self.weights[-1][1], 
 			W_in=dropout_output_layer.W * (1. - dropout_rates[-1]), 
 			b_in=dropout_output_layer.b,
-			activation=activations[-1]
+			activation=activations[-1],
+			verbose=False
 		)
 		self.layers.append(normal_output_layer)
 

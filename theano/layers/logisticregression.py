@@ -7,12 +7,13 @@ from activation import SoftMax
 
 class LogisticRegression(object):
 	
-	def __init__( self, layer_input, n_in, n_out, W_in=None, b_in=None, activation=SoftMax ):
+	def __init__( self, layer_input, n_in, n_out, W_in=None, b_in=None, activation=SoftMax, verbose=True ):
 		
-		print '\t\t    --- Initialising LOGISTIC REGRESSION Output Layer'
-		print '\t\t\tInput size:          {}'.format( n_in )
-		print '\t\t\tOutput size:         {}'.format( n_out )
-		print '\t\t\tActivation function  {}'.format( activation.name )
+		if verbose:
+			print '\t\t    --- Initialising LOGISTIC REGRESSION Output Layer'
+			print '\t\t\tInput size:          {}'.format( n_in )
+			print '\t\t\tOutput size:         {}'.format( n_out )
+			print '\t\t\tActivation function  {}'.format( activation.name )
 
 		# initialize with 0 the weights W as a matrix of shape (n_in, n_out)
 		if W_in is None:
