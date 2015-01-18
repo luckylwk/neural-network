@@ -1,11 +1,11 @@
 import sys
 
 sys.path.append('../') # theano folder path.
-import datasets.mnist
+import datasets.cifar10
 
 
-datasets = datasets.mnist.fn_T_load_data_MNIST( 
-	path_to_file='../../../_DATA/mnist.pkl.gz' 
+datasets = datasets.cifar10.fn_theano_load_cifar10( 
+	path_to_dir='../../../../../DATA/cifar-10-batches-py/' 
 )
 
 train_set_x, train_set_y = datasets[0] # <class 'theano.tensor.sharedvar.TensorSharedVariable'>

@@ -88,7 +88,7 @@ class GradientDescent(object):
 				self.updates[param] = stepped_param
 		##################
 
-	def train( self, batch_size, init_learning_rate, learning_rate_decay ):
+	def train( self, batch_size, init_learning_rate, learning_rate_decay, n_epochs=10 ):
 		
 		self.learning_rate = theano.shared( np.asarray( init_learning_rate, dtype=theano.config.floatX ) )
 		self.setup_parameters()
@@ -151,7 +151,7 @@ class GradientDescent(object):
 
 
 
-		for e in range(5):
+		for e in range(n_epochs):
 
 			# Minibatches. -- not stochastic!!?
 			train_cost = 0.0

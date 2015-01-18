@@ -2,12 +2,14 @@ import numpy as np
 import theano
 
 from activation import SoftMax
+from weights import create_weights
+
 
 
 
 class LogisticRegression(object):
 	
-	def __init__( self, layer_input, n_in, n_out, W_in=None, b_in=None, activation=SoftMax, verbose=True ):
+	def __init__( self, rng, layer_input, n_in, n_out, W_in=None, b_in=None, activation=SoftMax, verbose=True ):
 		
 		if verbose:
 			print '\t\t    --- Initialising LOGISTIC REGRESSION Output Layer'
@@ -17,7 +19,8 @@ class LogisticRegression(object):
 
 		# initialize with 0 the weights W as a matrix of shape (n_in, n_out)
 		if W_in is None:
-			W_val = np.zeros( (n_in, n_out), dtype=theano.config.floatX )
+			W_val = create_weights( rng=rng, n_in=n_in, n_out=n_out, activation=activation )
+			# W_val = np.zeros( (n_in, n_out), dtype=theano.config.floatX )
 			W_in = theano.shared( value=W_val, name='W', borrow=True )
 
 		self.W = W_in

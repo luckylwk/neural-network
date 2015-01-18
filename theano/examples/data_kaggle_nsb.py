@@ -1,11 +1,11 @@
 import sys
 
 sys.path.append('../') # theano folder path.
-import datasets.mnist
+import datasets.kaggle
 
 
-datasets = datasets.mnist.fn_T_load_data_MNIST( 
-	path_to_file='../../../_DATA/mnist.pkl.gz' 
+datasets = datasets.kaggle.fn_theano_load_kaggle_national_science_bowl( 
+	path_to_file='../../../../../DATA/kaggle-national-data-science-bowl/train-pickle.p' 
 )
 
 train_set_x, train_set_y = datasets[0] # <class 'theano.tensor.sharedvar.TensorSharedVariable'>

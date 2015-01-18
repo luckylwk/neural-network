@@ -145,7 +145,7 @@ class MLP(object):
                 n_in=n_in, n_out=n_out)
         self.dropout_layers.append(dropout_output_layer)
 
-        # Again, reuse paramters in the dropout output.
+        # Again, reuse parameters in the dropout output.
         output_layer = LogisticRegression(
             input=next_layer_input,
             # scale the weight matrix W with (1-p)

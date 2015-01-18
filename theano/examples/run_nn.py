@@ -12,7 +12,7 @@ sys.path.append('../') # theano folder path.
 
 import datasets.mnist
 from layers.activation import ReLU, SoftMax
-from models.cnn import ConvolutionalNeuralNetwork
+from models.nn import NeuralNetwork
 from trainers import GradientDescent
 
 random_seed = 1234
@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
 
 	# LOAD the DATA.
-	datasets = datasets.mnist.fn_T_load_data_MNIST('../../../_DATA/mnist.pkl.gz')
+	datasets = datasets.mnist.fn_T_load_data_MNIST( path_to_file='../../../_DATA/mnist.pkl.gz' )
 
 
 	# BUILD the MODEL.
@@ -33,9 +33,8 @@ if __name__ == '__main__':
 	x = theano.tensor.matrix('x') # <class 'theano.tensor.var.TensorVariable'>
 	y = theano.tensor.ivector('y')
 
-
 	# Create the MODEL.
-	__MODEL__ = ConvolutionalNeuralNetwork(
+	__MODEL__ = NeuralNetwork(
 		rng=rng, 
 		init_input=x,
 		layer_sizes=[ 28*28, 1200, 1200, 10 ],
@@ -45,19 +44,20 @@ if __name__ == '__main__':
 	)
 
 
-	# # TRAINING SETUP.
-	# initial_learning_rate = 1.0
-	# learning_rate_decay = 0.998
-	# batch_size = 100
-	# __TRAINER__ = GradientDescent( 
-	# 	datasets=datasets,
-	# 	X=x, y=y,
-	# 	model=__MODEL__
-	# )
-	# __TRAINER__.train( 
-	# 	batch_size=batch_size, 
-	# 	init_learning_rate=initial_learning_rate, 
-	# 	learning_rate_decay=learning_rate_decay 
-	# )
+	# TRAINING SETUP.
+	initial_learning_rate = 1.0
+	learning_rate_decay = 0.998
+	batch_size = 100
+	__TRAINER__ = GradientDescent( 
+		datasets=datasets,
+		X=x, y=y,
+		model=__MODEL__
+	)
+	__TRAINER__.train( 
+		batch_size=batch_size, 
+		init_learning_rate=initial_learning_rate, 
+		learning_rate_decay=learning_rate_decay,
+		n_epochs=20
+	)
 	
 

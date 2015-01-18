@@ -12,7 +12,7 @@ from layers.logisticregression import LogisticRegression
 
 
 
-class MLP(object):
+class NeuralNetwork(object):
 	
 	def __init__( self, rng, init_input, layer_sizes, dropout_rates, activations, use_bias=True ):
 		
@@ -59,6 +59,7 @@ class MLP(object):
 
 		# Create the OUTPUT LAYER (Logistic Regression).
 		dropout_output_layer = LogisticRegression(
+				rng=rng,
 				layer_input=this_dropout_input,
 				n_in=self.weights[-1][0], n_out=self.weights[-1][1],
 				W_in=None, b_in=None,
@@ -66,6 +67,7 @@ class MLP(object):
 		)
 		self.dropout_layers.append(dropout_output_layer)
 		normal_output_layer = LogisticRegression(
+			rng=rng,
 			layer_input=this_hidden_input, 
 			n_in=self.weights[-1][0], n_out=self.weights[-1][1], 
 			W_in=dropout_output_layer.W * (1. - dropout_rates[-1]), 

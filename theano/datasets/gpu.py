@@ -4,7 +4,7 @@ import theano
 
 
 
-def fn_T_support_shared_dataset( data_xy, borrow=True ):
+def fn_theano_gpu_shared_dataset( data_xy, borrow=True ):
 	""" 
 	Function that loads the dataset into Theano shared variables
 

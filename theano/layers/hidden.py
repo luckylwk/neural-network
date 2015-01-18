@@ -2,6 +2,7 @@ import numpy as np
 import theano
 
 from activation import *
+from weights import create_weights
 
 
 
@@ -16,11 +17,11 @@ class HiddenLayer(object):
 			print '\t\t\tActivation function {}'.format( activation.name )
 
 		self.input = layer_input
-		self.activation = activation
+		# self.activation = activation
 
 		# Weights
 		if W_in is None:
-			W_val = self.create_weights( rng=rng, n_in=n_in, n_out=n_out )
+			W_val = create_weights( rng=rng, n_in=n_in, n_out=n_out, activation=activation )
 			W_in = theano.shared( value=W_val, name='W', borrow=True )
 
 		self.W = W_in
@@ -48,17 +49,17 @@ class HiddenLayer(object):
 			self.params = [ self.W ]
 		##################
 
-	def create_weights( self, rng, n_in, n_out ):
-		# Bound ?
-		W_bound = np.sqrt(6. / (n_in + n_out))
-		# Create W_init from a Uniform distribution.
-		W_init = np.asarray( rng.uniform( low=-W_bound, high=W_bound, size=(n_in, n_out) ), dtype=theano.config.floatX )
-		# ??
-		if self.activation.name == 'Sigmoid':
-			W_init *= 4.0
-		# Return the weights.
-		return W_init
-		##################
+	# def create_weights( self, rng, n_in, n_out ):
+	# 	# Bound ?
+	# 	W_bound = np.sqrt(6. / (n_in + n_out))
+	# 	# Create W_init from a Uniform distribution.
+	# 	W_init = np.asarray( rng.uniform( low=-W_bound, high=W_bound, size=(n_in, n_out) ), dtype=theano.config.floatX )
+	# 	# ??
+	# 	if self.activation.name == 'Sigmoid':
+	# 		W_init *= 4.0
+	# 	# Return the weights.
+	# 	return W_init
+	# 	##################
 
 
 def dropout_mask( rng, p, values ):
