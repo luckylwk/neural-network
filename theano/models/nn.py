@@ -18,7 +18,7 @@ class NeuralNetwork(object):
 		
 		assert len(layer_sizes) - 1 == len(dropout_rates)
 
-		print 100 * '-', '\n\t    --- Initialising MODEL: MULTI-LAYER-PERCEPTRON'
+		print 100 * '-', '\n\t    --- Initialising MODEL: NEURAL NETWORK (MLP)'
 
 		self.weights = zip(layer_sizes[:-1], layer_sizes[1:])
 		self.layers = []

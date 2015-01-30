@@ -2,7 +2,8 @@ import numpy as np
 import theano
 
 from activation import *
-from weights import create_weights
+from weights import create_weights_uniform
+
 
 
 
@@ -12,18 +13,18 @@ class HiddenLayer(object):
 		
 		if verbose:
 			print '\t\t    --- Initialising HIDDEN Layer'
-			print '\t\t\tInput size:         {}'.format( n_in )
-			print '\t\t\tOutput size:        {}'.format( n_out )
-			print '\t\t\tActivation function {}'.format( activation.name )
+			print '\t\t\tInput size:          {}'.format( n_in )
+			print '\t\t\tOutput size:         {}'.format( n_out )
+			print '\t\t\tActivation function: {}'.format( activation.name )
 
 		self.input = layer_input
 		# self.activation = activation
 
 		# Weights
 		if W_in is None:
-			W_val = create_weights( rng=rng, n_in=n_in, n_out=n_out, activation=activation )
+			W_val = create_weights_uniform( rng=rng, n_in=n_in, n_out=n_out, activation=activation )
 			W_in = theano.shared( value=W_val, name='W', borrow=True )
-
+			
 		self.W = W_in
 
 		# Biases
@@ -48,18 +49,8 @@ class HiddenLayer(object):
 		else:
 			self.params = [ self.W ]
 		##################
+	##################
 
-	# def create_weights( self, rng, n_in, n_out ):
-	# 	# Bound ?
-	# 	W_bound = np.sqrt(6. / (n_in + n_out))
-	# 	# Create W_init from a Uniform distribution.
-	# 	W_init = np.asarray( rng.uniform( low=-W_bound, high=W_bound, size=(n_in, n_out) ), dtype=theano.config.floatX )
-	# 	# ??
-	# 	if self.activation.name == 'Sigmoid':
-	# 		W_init *= 4.0
-	# 	# Return the weights.
-	# 	return W_init
-	# 	##################
 
 
 def dropout_mask( rng, p, values ):
@@ -72,6 +63,7 @@ def dropout_mask( rng, p, values ):
 	# The cast is important because int * float32 = float64 which pulls things off the gpu
 	return values * theano.tensor.cast( mask, theano.config.floatX )
 	##################
+
 
 
 class DropoutHiddenLayer(HiddenLayer):

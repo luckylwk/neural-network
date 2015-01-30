@@ -53,7 +53,7 @@ class Tanh():
 
 
 
-class SoftPlus:
+class SoftPlus():
 	#
 	name = 'SoftPlus'
 	#
@@ -65,7 +65,7 @@ class SoftPlus:
 
 
 
-class SoftMax:
+class SoftMax():
 	#
 	name = 'SoftMax'
 	#

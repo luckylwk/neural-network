@@ -1,15 +1,23 @@
-# from .test import (
-#     Test_Print
-# )
+from .hidden import (
+    HiddenLayer
+)
 
-# from .cost import (
-#     Cost_Quadratic,
-#     Cost_CrossEntropy
-# )
+from .convolutional import (
+    ConvolutionalLayer
+)
+
+from .logisticregression import (
+    LogisticRegression
+)
 
 from .activation import (
 	Sigmoid,
 	ReLU,
-	Tanh
-#     Act_Softmax
+	Tanh,
+	SoftMax,
+	SoftPlus
+)
+
+from .weights import (
+	create_weights_uniform
 )

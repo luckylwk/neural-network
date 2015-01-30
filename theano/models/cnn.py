@@ -7,85 +7,67 @@ import theano
 
 sys.path.append('../') # theano folder path.
 
-from layers.hidden import HiddenLayer, DropoutHiddenLayer, dropout_mask
+from layers.hidden import HiddenLayer
+from layers.convolutional import ConvolutionalLayer
 from layers.logisticregression import LogisticRegression
 
 
 
 class ConvolutionalNeuralNetwork(object):
 	
-	def __init__( self, rng, init_input, layer_sizes, dropout_rates, activations, use_bias=True ):
+	def __init__( self, rng, init_input, input_dim, batch_size, layers, layer_sizes, use_bias=True ):
 		
-		assert len(layer_sizes) - 1 == len(dropout_rates)
-
-		print 100 * '-', '\n\t    --- Initialising MODEL: MULTI-LAYER-PERCEPTRON'
-
-		self.weights = zip(layer_sizes[:-1], layer_sizes[1:])
+		print 100 * '-', '\n\t    --- Initialising MODEL: CONVOLUTIONAL NEURAL NETWORK'
 		self.layers = []
-		self.dropout_layers = []
 
-		this_hidden_input = init_input
-		this_dropout_input = dropout_mask( rng=rng, p=dropout_rates[0], values=init_input )
+		this_input = init_input.reshape( (batch_size, ) + input_dim )
+		this_input_dim = ( batch_size, ) + input_dim
+		
 
-		# Create the HIDDEN LAYERS before the output layer.
-		for e,(n_in,n_out) in enumerate(self.weights[:-1]):
-			# Create the dropout layer.
-			dropout_layer = DropoutHiddenLayer(
-				rng=rng,
-				layer_input=this_dropout_input,
-				n_in=n_in, n_out=n_out, 
-				activation=activations[e],
-				W_in=None, b_in=None,
-				use_bias=use_bias,
-				dropout_rate=dropout_rates[e+1]
-			) # end of dropout layer
-			self.dropout_layers.append(dropout_layer)
-			this_dropout_input = dropout_layer.output
-			# Create a hidden layer.
-			hidden_layer = HiddenLayer(
-				rng=rng,
-				layer_input=this_hidden_input,
-				n_in=n_in, n_out=n_out,
-				activation=activations[e],
-				W_in=dropout_layer.W * (1. - dropout_rates[e+1]), # scale the weight matrix W with (1-p)
-				b_in=dropout_layer.b,
-				use_bias=use_bias 
-			) # end of hiddenlayer
-			# Append this layer to the list of layers
-			self.layers.append(hidden_layer)
-			# Set the output of this layer to be the input for the next layer.
-			this_hidden_input = hidden_layer.output
+		for e,layer in enumerate(layers[:-1]):
+			if layer['type'] == 'convolutional':
+				conv_layer = ConvolutionalLayer( 
+					rng=rng, 
+					layer_input=this_input,
+					input_dim=this_input_dim,
+					kernels=layer['kernels'], 
+					kernel_dim=layer['kernel_dim'],
+					kernel_stride=layer['kernel_stride'],
+					pooling=layer['pooling'],
+					activation=layer['activation']
+				)
+				this_input = conv_layer.output
+				this_input_dim = conv_layer.output_dim
+			else:
+				this_input = this_input.flatten(2)
+				hidden_layer = HiddenLayer(
+					rng=rng,
+					layer_input=this_input,
+					n_in=layer_sizes[e], n_out=layer_sizes[e+1],
+					activation=layer['activation']
+				) # end of hiddenlayer
+				this_input = hidden_layer.output
 
-
-		# Create the OUTPUT LAYER (Logistic Regression).
-		dropout_output_layer = LogisticRegression(
-				layer_input=this_dropout_input,
-				n_in=self.weights[-1][0], n_out=self.weights[-1][1],
-				W_in=None, b_in=None,
-				activation=activations[-1]
+		# Create the OUTPUT layer.
+		output_layer = LogisticRegression(
+			rng=rng,
+			layer_input=this_input, 
+			n_in=layer_sizes[-1], n_out=layer_sizes[-1],
+			activation=layers[-1]['activation'],
+			verbose=True
 		)
-		self.dropout_layers.append(dropout_output_layer)
-		normal_output_layer = LogisticRegression(
-			layer_input=this_hidden_input, 
-			n_in=self.weights[-1][0], n_out=self.weights[-1][1], 
-			W_in=dropout_output_layer.W * (1. - dropout_rates[-1]), 
-			b_in=dropout_output_layer.b,
-			activation=activations[-1],
-			verbose=False
-		)
-		self.layers.append(normal_output_layer)
 
+		# self.weights = zip(layer_sizes[:-1], layer_sizes[1:])
+		
 
-		# Set the COST and ERRORS for this model.
-		self.dropout_negative_log_likelihood = self.dropout_layers[-1].negative_log_likelihood
-		self.dropout_errors = self.dropout_layers[-1].errors
-		self.negative_log_likelihood = normal_output_layer.negative_log_likelihood
-		self.errors = normal_output_layer.errors
-
+		# 
+		
+		# self.negative_log_likelihood = normal_output_layer.negative_log_likelihood
+		# self.errors = normal_output_layer.errors
 
 		# Grab all the parameters together.
 		# self.params = [ param for layer in self.layers for param in layer.params ]
-		self.params = [ param for layer in self.dropout_layers for param in layer.params ]
+		# self.params = [ param for layer in self.dropout_layers for param in layer.params ]
 
 		##################
 	##################

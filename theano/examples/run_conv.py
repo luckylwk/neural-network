@@ -15,7 +15,7 @@ from layers.activation import ReLU, SoftMax
 from models.cnn import ConvolutionalNeuralNetwork
 from trainers import GradientDescent
 
-random_seed = 1234
+random_seed = 2345
 
 
 
@@ -30,18 +30,47 @@ if __name__ == '__main__':
 	# BUILD the MODEL.
 	rng = np.random.RandomState(random_seed)
 	dropout = True
-	x = theano.tensor.matrix('x') # <class 'theano.tensor.var.TensorVariable'>
+	X = theano.tensor.matrix('x') # <class 'theano.tensor.var.TensorVariable'>
 	y = theano.tensor.ivector('y')
 
 
 	# Create the MODEL.
 	__MODEL__ = ConvolutionalNeuralNetwork(
 		rng=rng, 
-		init_input=x,
+		init_input=X,
+		input_dim=( 1, 28, 28 ),
+		batch_size=100,
+		layers=[
+			{
+				"type": "convolutional",
+				"kernels": 64,
+				"kernel_dim": (5,5),
+				"kernel_stride": 1,
+				"pooling": (2,2),
+				"norm": True,
+				"activation": ReLU
+			},
+			{
+				"type": "convolutional",
+				"kernels": 32,
+				"kernel_dim": (5,5),
+				"kernel_stride": 1,
+				"pooling": (2,2),
+				"norm": True,
+				"activation": ReLU
+			},
+			{
+				"type": "hidden",
+				"dropout": True,
+				"activation": ReLU
+			},
+			{
+				"type": "logistic",
+				"activation": SoftMax
+			}
+		],
 		layer_sizes=[ 28*28, 1200, 1200, 10 ],
-		dropout_rates=[ 0.2, 0.2, 0.2 ], # rate is the chance something is dropped.
-		activations=[ ReLU, ReLU, SoftMax ],
-		use_bias=True 
+		use_bias=True
 	)
 
 

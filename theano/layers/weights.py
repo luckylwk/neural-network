@@ -4,7 +4,7 @@ import theano
 
 
 
-def create_weights( rng, n_in, n_out, activation=None ):
+def create_weights_uniform( rng, n_in, n_out, activation=None ):
 	# Bound ?
 	W_bound = np.sqrt(6. / (n_in + n_out))
 	# Create W_init from a Uniform distribution.

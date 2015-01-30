@@ -2,7 +2,7 @@ import numpy as np
 import theano
 
 from activation import SoftMax
-from weights import create_weights
+from weights import create_weights_uniform
 
 
 
@@ -15,11 +15,11 @@ class LogisticRegression(object):
 			print '\t\t    --- Initialising LOGISTIC REGRESSION Output Layer'
 			print '\t\t\tInput size:          {}'.format( n_in )
 			print '\t\t\tOutput size:         {}'.format( n_out )
-			print '\t\t\tActivation function  {}'.format( activation.name )
+			print '\t\t\tActivation function: {}'.format( activation.name )
 
 		# initialize with 0 the weights W as a matrix of shape (n_in, n_out)
 		if W_in is None:
-			W_val = create_weights( rng=rng, n_in=n_in, n_out=n_out, activation=activation )
+			W_val = create_weights_uniform( rng=rng, n_in=n_in, n_out=n_out, activation=activation )
 			# W_val = np.zeros( (n_in, n_out), dtype=theano.config.floatX )
 			W_in = theano.shared( value=W_val, name='W', borrow=True )
 

@@ -10,6 +10,14 @@ from trainers import fn_print_epoch_progress
 
 
 
+'''
+To implement:
+	Stochastic Gradient Descent
+	Flexible momentum parameters
+	...
+'''
+
+
 class GradientDescent(object):
 
 	def __init__( self, datasets, X, y, model ):
@@ -171,7 +179,7 @@ class GradientDescent(object):
 			# cv_cost, cv_errors = np.mean( [ __CV_MODEL__(i) for i in xrange(n_valid_batches) ] ) * 100.0
 			# print this_validation_errors
 
-			print '\t\tCV Cost: %7.3f --- CV Error: %5.3f%%' % ( cv_cost/n_valid_batches, cv_error/n_valid_batches )
+			print '\t\tCV Cost: %8.4f --- CV Error: %6.4f%%' % ( cv_cost/n_valid_batches, cv_error/n_valid_batches )
 			# Update the learning rate using the defined Theano function.
 			new_learning_rate = decay_learning_rate()
 
