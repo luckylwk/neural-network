@@ -1,5 +1,6 @@
 import numpy as np
 import theano
+import theano.tensor.signal.downsample
 
 from activation import *
 from weights import create_weights_uniform

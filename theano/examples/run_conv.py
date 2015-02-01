@@ -29,7 +29,6 @@ if __name__ == '__main__':
 
 	# BUILD the MODEL.
 	rng = np.random.RandomState(random_seed)
-	dropout = True
 	X = theano.tensor.matrix('x') # <class 'theano.tensor.var.TensorVariable'>
 	y = theano.tensor.ivector('y')
 
@@ -69,20 +68,19 @@ if __name__ == '__main__':
 				"activation": SoftMax
 			}
 		],
-		layer_sizes=[ 28*28, 1200, 1200, 10 ],
+		layer_sizes=[ 0, 0, 256, 10 ], # set the convolutional sizes to 0.
 		use_bias=True
 	)
 
 
-	# # TRAINING SETUP.
-	# initial_learning_rate = 1.0
-	# learning_rate_decay = 0.998
-	# batch_size = 100
-	# __TRAINER__ = GradientDescent( 
-	# 	datasets=datasets,
-	# 	X=x, y=y,
-	# 	model=__MODEL__
-	# )
+	# TRAINING SETUP.
+	initial_learning_rate = 1.0
+	learning_rate_decay = 0.998
+	__TRAINER__ = GradientDescent( 
+		datasets=datasets,
+		X=X, y=y,
+		model=__MODEL__
+	)
 	# __TRAINER__.train( 
 	# 	batch_size=batch_size, 
 	# 	init_learning_rate=initial_learning_rate, 

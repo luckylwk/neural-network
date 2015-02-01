@@ -30,7 +30,7 @@ from mnist_load import *
 ## Sparse AutoEncoder Class.
 class SparseAutoEncoder():
 	
-	def __init__(self, n_input, n_hidden, rho=0.01, lamda=0.0001, beta=3.0, cost=Cost_CrossEntropy, activation=Act_Sigmoid ):
+	def __init__(self, n_input, n_hidden, rho=0.05, lamda=0.0001, beta=1.0, cost=Cost_CrossEntropy, activation=Act_Sigmoid ):
 		self.__version__ = 1.5
 		
 		self.n_input = n_input
@@ -174,10 +174,11 @@ class SparseAutoEncoder():
 
 	def visualizeW1( self ):
 		dim = int(math.sqrt(self.n_input))
-		fig, ax = plt.subplots( nrows=10, ncols=10 )
+		fig, ax = plt.subplots( nrows=7, ncols=7 )
 		index = 0							  
 		for axis in ax.flat:
-			image = axis.imshow(self.weights[0][index,:].reshape(dim, dim), cmap=plt.cm.gray, interpolation='nearest' )
+			wDiv = np.sqrt( np.multiply( self.weights[0][index,:], self.weights[0][index,:] ).sum() )
+			image = axis.imshow(self.weights[0][index,:].reshape(dim, dim)/wDiv, cmap=plt.cm.gray, interpolation='nearest' )
 			axis.set_frame_on(False)
 			axis.set_axis_off()
 			index += 1
@@ -210,32 +211,35 @@ if __name__=="__main__":
 	print '\tData loaded in:             {} seconds.'.format( datetime.now()-start )
 	# Make a selection, normalize and transpose.
 	m, m_cv = 20000, 1000
-	X_train = np.asarray( np.asarray(_MN_DATA.train_images[:m])/(X_max-X_min) ).transpose().reshape((28,28,m)) # m-by-n to n-by-m
+	X_train = np.asarray( np.asarray(_MN_DATA.train_images[:m])/(X_max-X_min) ).transpose() #.reshape((28,28,m)) # m-by-n to n-by-m
 	# X_test = np.asarray( np.asarray(_MN_DATA.train_images[m:m+m_cv])/(X_max-X_min) ).transpose()
 	print '\tTraining-set shape:        ', X_train.shape
 	# print '\tTesting-set shape:         ', X_test.shape, '\n', 100 * '-'
 
 
-	# Create Patches.
-	patch_side = 8
-	num_patches = 40000
-	dataset = np.zeros((patch_side*patch_side, num_patches))
-	rand = np.random.RandomState(int(time.time()))
-	image_indices = rand.randint(28-patch_side, size=(num_patches,2) ) # 10000-by-2 array of random numbers between 0-504(512-8)
-	image_number  = rand.randint(20000, size=num_patches ) # 10000-by-1 with integer between 0-9
-	for i in xrange(num_patches):
-		index1 = image_indices[i, 0]
-		index2 = image_indices[i, 1]
-		index3 = image_number[i]
-		patch = X_train[index1:index1+patch_side, index2:index2+patch_side, index3] # extract 8-by-8 patches from random image.
-		patch = patch.flatten() # make it a (8x8)64-by-1 
-		dataset[:, i] = patch
+	# # Create Patches.
+	# patch_side = 12
+	# num_patches = 40000
+	# dataset = np.zeros((patch_side*patch_side, num_patches))
+	# rand = np.random.RandomState(int(time.time()))
+	# image_indices = rand.randint(28-patch_side, size=(num_patches,2) ) # 10000-by-2 array of random numbers between 0-504(512-8)
+	# image_number  = rand.randint(m, size=num_patches ) # 10000-by-1 with integer between 0-9
+	# for i in xrange(num_patches):
+	# 	index1 = image_indices[i, 0]
+	# 	index2 = image_indices[i, 1]
+	# 	index3 = image_number[i]
+	# 	patch = X_train[index1:index1+patch_side, index2:index2+patch_side, index3] # extract 8-by-8 patches from random image.
+	# 	patch = patch.flatten() # make it a (8x8)64-by-1 
+	# 	dataset[:, i] = patch
+
+	# AE = SparseAutoEncoder( n_input=dataset.shape[0], n_hidden=50 )
+	# AE.testtestest( X_in=dataset, epochs=50, batch_size=50 )
+
 
 	# Add noise.
-	# X_train = np.random.binomial( n=1, p=0.1, size=X_train.shape ) * X_train
-	
-	AE = SparseAutoEncoder( n_input=dataset.shape[0], n_hidden=10*10 )
-	AE.testtestest( X_in=dataset, epochs=500, batch_size=50 )
+	X_train = np.random.binomial( n=1, p=0.1, size=X_train.shape ) * X_train
+	AE = SparseAutoEncoder( n_input=X_train.shape[0], n_hidden=50 )
+	AE.testtestest( X_in=X_train, epochs=50, batch_size=50 )
 
 	
 

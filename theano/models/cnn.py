@@ -38,6 +38,7 @@ class ConvolutionalNeuralNetwork(object):
 				)
 				this_input = conv_layer.output
 				this_input_dim = conv_layer.output_dim
+				self.layers.append(conv_layer)
 			else:
 				this_input = this_input.flatten(2)
 				hidden_layer = HiddenLayer(
@@ -47,6 +48,8 @@ class ConvolutionalNeuralNetwork(object):
 					activation=layer['activation']
 				) # end of hiddenlayer
 				this_input = hidden_layer.output
+				self.layers.append(hidden_layer)
+
 
 		# Create the OUTPUT layer.
 		output_layer = LogisticRegression(
@@ -56,18 +59,16 @@ class ConvolutionalNeuralNetwork(object):
 			activation=layers[-1]['activation'],
 			verbose=True
 		)
+		self.layers.append(output_layer)
 
-		# self.weights = zip(layer_sizes[:-1], layer_sizes[1:])
 		
+		# Set the COST and ERRORS for this model.
+		self.negative_log_likelihood = output_layer.negative_log_likelihood
+		self.errors = output_layer.errors
 
-		# 
-		
-		# self.negative_log_likelihood = normal_output_layer.negative_log_likelihood
-		# self.errors = normal_output_layer.errors
 
 		# Grab all the parameters together.
-		# self.params = [ param for layer in self.layers for param in layer.params ]
-		# self.params = [ param for layer in self.dropout_layers for param in layer.params ]
+		self.params = [ param for layer in self.layers for param in layer.params ]
 
 		##################
 	##################
